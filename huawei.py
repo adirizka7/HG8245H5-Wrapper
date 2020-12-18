@@ -12,13 +12,23 @@ class Huawei:
         self.driver = webdriver.Chrome(ChromeDriverManager().install())
         self.driver.get(self.URL)
         self.clickable_mapping = {
-            'Advanced': ('', 'name_addconfig'),
-            'Security': ('', 'name_securityconfig'),
-            'Parental Control': ('', 'parentalctrl'),
-            'Content': ('frame', 'menuIframe'),
-            'Overview': ('frame', 'pccframeContent'),
-            'New': ('', 'Newbutton'),
-            'Specified Device': ('', 'ChildrenList')
+            'Advanced': 'name_addconfig',
+            'Security': 'name_securityconfig',
+            'Parental Control': 'parentalctrl',
+            'New': 'Newbutton',
+            'Specified Device': 'ChildrenList'
+        }
+        self.frame_mapping = {
+            'Content': 'menuIframe',
+            'Overview': 'pccframeContent'
+        }
+        self.form_mapping = {
+            'MAC Address': 'macAddr',
+            'Device Description': 'ChildrenInfo'
+        }
+        self.option_mapping = {
+            'Specified Device': 'ChildrenList',
+            'Template': 'TemplateList'
         }
         self.base_xpath_id = '//*[@id="{}"]'
 
@@ -30,25 +40,32 @@ class Huawei:
         submit = self.driver.find_element_by_xpath('//*[@id="loginbutton"]')
         submit.click()
 
-    def go_to(self, clickable):
+    def click(self, clickable):
+        xpath = self.clickable_mapping.get(clickable, clickable)
 
-        default_xpath = lambda x: ('', x)
-        xpath = self.clickable_mapping.get(clickable, default_xpath(clickable))
-
-        if len(xpath) != 2:
-            print('xpath length should be 2')
-            return
-
-        if xpath[0] == 'frame':
-            xpath_selector = self.base_xpath_id.format(xpath[1])
-            self.driver.switch_to.frame(
-                self.driver.find_element_by_xpath(xpath_selector)
-            )
-            time.sleep(5)
-            return
-
-        xpath_selector = self.base_xpath_id.format(xpath[1])
+        xpath_selector = self.base_xpath_id.format(xpath)
         self.driver.find_element_by_xpath(xpath_selector).click()
+
+    def switch_to_frame(self, frame):
+        xpath = self.frame_mapping.get(frame, frame)
+        xpath_selector = self.base_xpath_id.format(xpath)
+        self.driver.switch_to.frame(
+            self.driver.find_element_by_xpath(xpath_selector)
+        )
+        time.sleep(5)
+
+    def fill_form(self, form_xpath, text):
+        xpath = self.form_mapping.get(form_xpath, form_xpath)
+        xpath_selector = self.base_xpath_id.format(xpath)
+        form = self.driver.find_element_by_xpath(xpath_selector)
+        form.send_keys(text)
+
+    def select_text_option(self, option_xpath, chosen_text):
+        xpath = self.option_mapping.get(option_xpath, option_xpath)
+        xpath_selector = self.base_xpath_id.format(xpath)
+        option = Select(self.driver.find_element_by_xpath(xpath_selector))
+        option.select_by_visible_text(chosen_text)
+
 
 if __name__ == '__main__':
 
@@ -58,16 +75,17 @@ if __name__ == '__main__':
     huawei = Huawei()
     huawei.login(username, password)
 
-    commands_sequence = [
-        'Advanced', 'Security', 'Parental Control', 'Content', 'Overview', 'New',
-        'Specified Device'
-    ]
-    for command in commands_sequence:
-        huawei.go_to(command)
+    for command in ['Advanced', 'Security', 'Parental Control']:
+        huawei.click(command)
 
-    ids = huawei.driver.find_elements_by_xpath('//*[@id]')
-    for id in ids:
-        print(id.get_attribute('id'))
+    for frame in ['Content', 'Overview']:
+        huawei.switch_to_frame(frame)
 
-    select = Select(huawei.driver.find_element_by_xpath('//*[@id="ChildrenList"]'))
-    select.select_by_visible_text('Manually input MAC address')
+    huawei.click('New')
+
+    huawei.select_text_option('Specified Device', 'Manually input MAC address')
+
+    huawei.fill_form('MAC Address', 'adirizka7')
+    huawei.fill_form('Device Description', 'adirizka8')
+
+    huawei.select_text_option('Template', 'No Access')
