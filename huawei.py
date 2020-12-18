@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.webdriver.support.ui import Select
 from webdriver_manager.chrome import ChromeDriverManager
 
 import requests
@@ -16,7 +17,8 @@ class Huawei:
             'Parental Control': ('', 'parentalctrl'),
             'Content': ('frame', 'menuIframe'),
             'Overview': ('frame', 'pccframeContent'),
-            'New': ('', 'Newbutton')
+            'New': ('', 'Newbutton'),
+            'Specified Device': ('', 'ChildrenList')
         }
         self.base_xpath_id = '//*[@id="{}"]'
 
@@ -57,7 +59,15 @@ if __name__ == '__main__':
     huawei.login(username, password)
 
     commands_sequence = [
-        'Advanced', 'Security', 'Parental Control', 'Content', 'Overview', 'New'
+        'Advanced', 'Security', 'Parental Control', 'Content', 'Overview', 'New',
+        'Specified Device'
     ]
     for command in commands_sequence:
         huawei.go_to(command)
+
+    ids = huawei.driver.find_elements_by_xpath('//*[@id]')
+    for id in ids:
+        print(id.get_attribute('id'))
+
+    select = Select(huawei.driver.find_element_by_xpath('//*[@id="ChildrenList"]'))
+    select.select_by_visible_text('Manually input MAC address')
