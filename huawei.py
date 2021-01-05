@@ -5,6 +5,10 @@ from webdriver_manager.chrome import ChromeDriverManager
 import requests
 import time
 import os
+import json
+
+users = open('static/users.json', 'r').read()
+users = json.loads(users)
 
 class Huawei:
     def __init__(self):
@@ -16,7 +20,8 @@ class Huawei:
             'Security': 'name_securityconfig',
             'Parental Control': 'parentalctrl',
             'New': 'Newbutton',
-            'Specified Device': 'ChildrenList'
+            'Specified Device': 'ChildrenList',
+            'Apply': 'ButtonApply'
         }
         self.frame_mapping = {
             'Content': 'menuIframe',
@@ -68,7 +73,6 @@ class Huawei:
 
 
 if __name__ == '__main__':
-
     username = os.environ.get('Huawei_Wifi_Username', '')
     password = os.environ.get('Huawei_Wifi_Password', '')
 
@@ -81,11 +85,13 @@ if __name__ == '__main__':
     for frame in ['Content', 'Overview']:
         huawei.switch_to_frame(frame)
 
-    huawei.click('New')
+    for device_description, mac_address in users.items():
+        huawei.click('New')
+        huawei.select_text_option('Specified Device', 'Manually input MAC address')
+        huawei.fill_form('MAC Address', mac_address)
+        huawei.fill_form('Device Description', device_description)
+        huawei.select_text_option('Template', 'No Access')
+        huawei.click('Apply')
 
-    huawei.select_text_option('Specified Device', 'Manually input MAC address')
-
-    huawei.fill_form('MAC Address', 'adirizka7')
-    huawei.fill_form('Device Description', 'adirizka8')
-
-    huawei.select_text_option('Template', 'No Access')
+    time.sleep(100)
+    huawei.driver.quit()
