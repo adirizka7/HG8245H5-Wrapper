@@ -1,11 +1,25 @@
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import UnexpectedAlertPresentException
+from selenium.common.exceptions import TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
 
 import requests
 import time
 import os
 import json
+import logging
+
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+    datefmt='%Y-%m-%d:%H:%M:%S',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 users = open('static/users.json', 'r').read()
 users = json.loads(users)
@@ -71,6 +85,15 @@ class Huawei:
         option = Select(self.driver.find_element_by_xpath(xpath_selector))
         option.select_by_visible_text(chosen_text)
 
+    def delete_parental_control_devices(self):
+        """
+        get page source
+        find all PCtrMacConfigList_record_[0-9]+ id
+        matches all with mac addresses in users.json
+        delete all matching mac addresses
+        """
+        pass
+
 
 if __name__ == '__main__':
     username = os.environ.get('Huawei_Wifi_Username', '')
@@ -92,6 +115,14 @@ if __name__ == '__main__':
         huawei.fill_form('Device Description', device_description)
         huawei.select_text_option('Template', 'No Access')
         huawei.click('Apply')
+
+        try:
+            WebDriverWait(huawei.driver, 0.5).until(EC.alert_is_present())
+            alert = huawei.driver.switch_to.alert
+            logger.info(f'[{alert.text}] {device_description} > {mac_address}')
+            alert.accept()
+        except TimeoutException:
+            logger.info(f'[Success] {device_description} > {mac_address}')
 
     time.sleep(100)
     huawei.driver.quit()
