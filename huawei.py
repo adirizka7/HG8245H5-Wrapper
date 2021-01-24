@@ -27,7 +27,15 @@ users = json.loads(users)
 class Huawei:
     def __init__(self):
         self.URL = 'http://192.168.100.1'
-        self.driver = webdriver.Chrome(ChromeDriverManager().install())
+
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        self.driver = webdriver.Chrome(
+            ChromeDriverManager().install(),
+            options=options
+        )
         self.driver.get(self.URL)
         self.clickable_mapping = {
             'Advanced': 'name_addconfig',
@@ -124,5 +132,4 @@ if __name__ == '__main__':
         except TimeoutException:
             logger.info(f'[Success] {device_description} > {mac_address}')
 
-    time.sleep(100)
     huawei.driver.quit()
